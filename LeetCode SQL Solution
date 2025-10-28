@@ -87,3 +87,27 @@ JOIN employee b
 ON a.managerId = b.id
 GROUP BY b.id, b.name
 HAVING count(a.id)>5
+
+-- 1934. Confirmation Rate
+-- Solution 1
+SELECT s.user_id, ROUND(COALESCE(SUM(CASE WHEN c.action = 'confirmed' THEN c.cnt ELSE 0 END) * 1/SUM(c.cnt),0),2) AS confirmation_rate
+FROM signups s
+LEFT JOIN 
+(SELECT user_id, action, COUNT(action) AS cnt
+FROM confirmations
+GROUP BY user_id, action) AS c
+ON s.user_id = c.user_id
+GROUP BY s.user_id
+
+-- Solution 2
+SELECT s.user_id, ROUND(AVG(CASE WHEN c.action = 'confirmed' THEN 1 ELSE 0 END),2) as confirmation_rate
+FROM signups s
+LEFT JOIN confirmations c
+ON s.user_id = c.user_id
+GROUP BY s.user_id
+
+-- 620. Not Boring Movies
+SELECT * 
+FROM cinema
+WHERE description NOT LIKE 'boring' AND id % 2 <> 0
+ORDER BY rating DESC
