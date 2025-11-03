@@ -118,3 +118,108 @@ FROM prices p
 LEFT JOIN UnitsSold u
 ON p.product_id = u.product_id AND u.purchase_date BETWEEN p.start_date AND p.end_date
 GROUP BY p.product_id
+
+-- 1075. Project Employees I
+SELECT p.project_id, ROUND(AVG(e.experience_years),2) AS average_years
+FROM project p
+LEFT JOIN employee e
+ON p.employee_id = e.employee_id
+GROUP BY p.project_id
+
+-- 1633. Percentage of Users Attended a Contest
+SELECT 
+contest_id, 
+round(
+    (count(user_id)
+    /
+    (SELECT COUNT(DISTINCT user_id) FROM users))
+    *100,2) as percentage
+FROM register
+GROUP BY contest_id
+ORDER BY percentage DESC, contest_id ASC
+
+-- 1211. Queries Quality and Percentage
+SELECT 
+query_name, 
+ROUND(AVG(rating/position),2) AS quality,
+-- ROUND(SUM(rating < 3) / COUNT(rating) * 100,2) AS poor_query_percentage
+-- ROUND(SUM(CASE WHEN rating < 3 THEN 1 ELSE 0 END)/COUNT(rating) * 100,2) AS poor_query_percentage
+ROUND(SUM(IF(rating<3,1,0))/COUNT(rating) *100,2) AS poor_query_percentage
+FROM queries
+GROUP BY query_name
+
+-- 1193. Monthly Transactions I
+SELECT 
+DATE_FORMAT(trans_date, '%Y-%m') AS month, 
+country, 
+COUNT('id') AS trans_count, 
+SUM(IF(state = 'approved',1,0)) AS approved_count, 
+SUM(amount) AS trans_total_amount, 
+sum(IF(state = 'approved',amount,0)) AS approved_total_amount
+FROM transactions
+GROUP BY month,country
+
+-- 1174. Immediate Food Delivery II
+WITH first_order AS (
+    SELECT customer_id, MIN(order_date) as order_date
+    FROM delivery
+    GROUP BY customer_id  
+)
+
+SELECT ROUND(AVG(d.order_date = d.customer_pref_delivery_date)*100,2) as immediate_percentage 
+FROM delivery d
+JOIN first_order a
+ON d.order_date = a.order_date and d.customer_id = a.customer_id
+
+-- 550. Game Play Analysis IV
+SELECT round(COUNT(DISTINCT b.player_id)/COUNT(DISTINCT a.player_id),2) as fraction
+FROM (
+    SELECT player_id, MIN(event_date) AS first_login 
+    FROM activity 
+    GROUP BY player_id
+    ) a
+LEFT JOIN activity b 
+ON a.player_id = b.player_id AND DATEDIFF(a.first_login, b.event_date) = -1
+
+-- 2356. Number of Unique Subjects Taught by Each Teacher
+SELECT teacher_id, COUNT(DISTINCT subject_id) as cnt
+FROM teacher
+GROUP BY teacher_id
+
+-- 1141. User Activity for the Past 30 Days I
+SELECT activity_date as day, COUNT(DISTINCT user_id) as active_users
+FROM activity
+WHERE DATEDIFF('2019-07-27', activity_date) < 30 AND activity_date <= '2019-07-27'
+GROUP BY activity_date
+
+-- 1070. Product Sales Analysis III
+SELECT a.product_id, a.first_year, b.quantity, b.price
+FROM 
+(SELECT product_id, min(year) AS first_year FROM sales GROUP BY product_id) a
+JOIN sales b
+ON a.product_id = b.product_id AND a.first_year = b.year
+
+-- 596. Classes With at Least 5 Students
+SELECT class
+FROM courses
+GROUP BY class
+HAVING COUNT(student) >= 5
+
+-- 1729. Find Followers Count
+SELECT user_id, COUNT(follower_id) as followers_count
+FROM followers
+GROUP BY user_id
+ORDER BY user_id ASC
+
+-- 619. Biggest Single Number
+SELECT MAX(a.num) as num
+FROM (SELECT num
+FROM MyNumbers
+GROUP BY num
+HAVING COUNT(num) = 1) a
+
+-- 1045. Customers Who Bought All Products
+SELECT customer_id
+FROM customer 
+GROUP BY customer_id
+HAVING COUNT(DISTINCT product_key) = (SELECT COUNT(*) FROM product)
