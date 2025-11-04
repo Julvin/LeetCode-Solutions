@@ -223,3 +223,15 @@ SELECT customer_id
 FROM customer 
 GROUP BY customer_id
 HAVING COUNT(DISTINCT product_key) = (SELECT COUNT(*) FROM product)
+
+-- 1731. The Number of Employees Which Report to Each Employee
+SELECT 
+    b.employee_id, 
+    b.name, 
+    COUNT(a.employee_id) as reports_count, 
+    ROUND(AVG(a.age),0) as average_age
+FROM Employees a
+JOIN Employees b
+ON a.reports_to = b.employee_id
+GROUP BY b.employee_id
+ORDER BY b.employee_id
