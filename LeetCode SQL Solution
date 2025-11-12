@@ -63,7 +63,7 @@ LEFT JOIN bonus b
 ON e.empId = b.empID
 WHERE COALESCE(bonus, 0 ) < 1000
  
--- alternative: WHERE bonus < 1000 or bonus IS NULL
+# alternative: WHERE bonus < 1000 or bonus IS NULL
 
 -- 1280. Students and Examinations
 SELECT data.student_id, data.student_name, data.subject_name, COALESCE(subject.attended_exams,0) as attended_exams
@@ -89,7 +89,7 @@ GROUP BY b.id, b.name
 HAVING count(a.id)>5
 
 -- 1934. Confirmation Rate
--- Solution 1
+#Solution 1
 SELECT s.user_id, ROUND(COALESCE(SUM(CASE WHEN c.action = 'confirmed' THEN c.cnt ELSE 0 END) * 1/SUM(c.cnt),0),2) AS confirmation_rate
 FROM signups s
 LEFT JOIN 
@@ -99,7 +99,7 @@ GROUP BY user_id, action) AS c
 ON s.user_id = c.user_id
 GROUP BY s.user_id
 
--- Solution 2
+#Solution 2
 SELECT s.user_id, ROUND(AVG(CASE WHEN c.action = 'confirmed' THEN 1 ELSE 0 END),2) as confirmation_rate
 FROM signups s
 LEFT JOIN confirmations c
@@ -235,3 +235,276 @@ JOIN Employees b
 ON a.reports_to = b.employee_id
 GROUP BY b.employee_id
 ORDER BY b.employee_id
+
+-- 1789. Primary Department for Each Employee
+SELECT employee_id, department_id
+FROM employee
+WHERE primary_flag = 'Y' OR  employee_id IN (SELECT employee_id FROM employee GROUP BY employee_id HAVING count(department_id) = 1)
+
+-- 610. Triangle Judgement
+SELECT 
+x, y, z,
+CASE 
+    WHEN x + z > y AND x + y > z AND y+z > x THEN 'Yes' 
+    ELSE 'No' 
+    END AS triangle
+FROM triangle
+
+-- 180. Consecutive Numbers
+SELECT DISTINCT a.num AS ConsecutiveNums
+FROM logs a, logs b, logs c
+WHERE a.num = b.num AND b.num = c.num AND a.id = b.id - 1 AND b.id = c.id-1
+
+-- 1164. Product Price at a Given Date
+WITH a AS (
+    SELECT 
+        product_id,
+        new_price,
+        change_date,
+        ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY change_date DESC) AS rn
+    FROM products
+    WHERE change_date <='2019-08-16'                                
+)
+
+SELECT b.product_id, COALESCE(a.new_price,10) as price
+FROM (SELECT DISTINCT product_id FROM products) as b
+LEFT JOIN a
+ON b.product_id = a.product_id AND a.rn = 1
+
+-- 1240. Last Person to Fit in the Bus
+SELECT a.person_name
+FROM
+(SELECT 
+person_name,
+SUM(weight) OVER (ORDER BY turn ASC) as total_weight
+FROM queue) as a
+WHERE a.total_weight <= 1000
+ORDER BY a.total_weight DESC
+LIMIT 1
+
+-- 1907. Count Salary Categories
+SELECT a.category, a.accounts_count
+FROM 
+(
+    SELECT 
+    'Low Salary' AS category, 
+    SUM(CASE WHEN income < 20000 THEN 1 ELSE 0 END) AS accounts_count  
+    FROM accounts
+
+    UNION
+
+    SELECT 
+    'Average Salary' AS category, 
+    SUM(CASE WHEN income BETWEEN 20000 AND 50000 THEN 1 ELSE 0 END) AS accounts_count  
+    FROM accounts
+
+    UNION
+
+    SELECT 
+    'High Salary' AS category, 
+    SUM(CASE WHEN income > 50000 THEN 1 ELSE 0 END) AS accounts_count  
+    FROM accounts
+) as a
+ORDER BY a.accounts_count DESC
+
+-- 1978. Employees Whose Manager Left the Company
+SELECT employee_id
+FROM employees
+WHERE manager_id NOT IN (SELECT employee_id FROM employees) AND salary < 30000
+ORDER BY employee_id
+
+-- 626. Exchange Seats
+SELECT 
+    IF(id < (SELECT MAX(id) from seat),
+    IF(id % 2 = 0,id-1,id+1),
+    IF(id % 2 = 0, id-1, id)) as id,
+    student
+FROM seat
+ORDER BY ID ASC
+
+-- 1341. Movie Rating
+
+#Solution 1
+WITH a AS(
+    SELECT mr.movie_id, mr.user_id, mr.rating, mr.created_at,mv.title,u.name
+    FROM movierating mr
+    LEFT JOIN movies mv
+    ON mr.movie_id = mv.movie_id
+    LEFT JOIN users u
+    ON mr.user_id = u.user_id
+)
+
+(SELECT a.name as results
+FROM a
+GROUP BY a.user_id
+ORDER BY COUNT(a.user_id) DESC, a.name ASC
+LIMIT 1)
+
+UNION ALL
+
+(SELECT a.title as results
+FROM a
+WHERE a.created_at BETWEEN '2020-02-01' AND '2020-02-29'
+GROUP BY a.movie_id
+ORDER BY AVG(a.rating) DESC, a.title ASC
+LIMIT 1)
+
+#Solution 2
+SELECT name as results FROM
+(
+    SELECT user_id, name, COUNT(*)
+    FROM Users JOIN MovieRating USING(user_id)
+    GROUP BY 1,2
+    ORDER BY 3 DESC, 2 ASC
+    LIMIT 1
+) users
+
+UNION ALL
+
+SELECT title as results FROM
+(SELECT movie_id, title, AVG(rating)
+FROM movies JOIN MovieRating USING(movie_id)
+WHERE created_at BETWEEN '2020-02-01' AND '2020-02-29'
+-- WHERE LEFT(created_at,7) = '2020-02'
+-- WHERE DATE_FORMAT(created_at, '%Y-%m') = '2020-02'
+GROUP BY 1,2
+ORDER BY 3 DESC, 2 ASC
+LIMIT 1) movie
+
+-- 1321. Restauran Growth
+SELECT DISTINCT
+    visited_on,
+    SUM(amount) OVER(ORDER BY visited_on ASC RANGE BETWEEN INTERVAL 6 DAY PRECEDING AND CURRENT ROW) as amount,
+    ROUND((SUM(amount) OVER(ORDER BY visited_on ASC RANGE BETWEEN INTERVAL 6 DAY PRECEDING AND CURRENT ROW)/7),2) as average_amount
+FROM customer
+LIMIT 100000000 OFFSET 6
+
+-- 602. Friend Request II: Who Has the Most Friends
+SELECT id, num
+FROM(
+SELECT id, SUM(num) as num
+FROM(
+(SELECT requester_id AS id, COUNT(requester_id) AS num
+FROM RequestAccepted
+GROUP BY requester_id)
+
+UNION ALL
+
+(SELECT accepter_id AS id, COUNT(accepter_id) AS num
+FROM RequestAccepted
+GROUP BY accepter_id)
+) b
+GROUP BY id
+) c
+ORDER BY num DESC
+LIMIT 1
+
+#Solution 2
+SELECT id, COUNT(id) as num
+FROM 
+(
+    SELECT requester_id as id FROM RequestAccepted
+    UNION ALL
+    SELECT accepter_id as id FROM RequestAccepted
+) a
+GROUP BY id
+ORDER BY num DESC
+LIMIT 1
+
+-- 585. Investments in 2016
+SELECT ROUND(SUM(tiv_2016),2) as tiv_2016
+FROM Insurance
+WHERE tiv_2015 IN 
+(SELECT tiv_2015 FROM Insurance GROUP BY tiv_2015 HAVING COUNT(*) > 1)
+AND (lat, lon) IN (SELECT lat, lon FROM Insurance GROUP BY lat,lon HAVING COUNT(*) = 1)
+
+-- 185. Department Top Three Salaries
+SELECT department, employee, salary
+FROM (
+SELECT 
+    d.name as department,
+    e.name as employee,
+    e.salary,
+    DENSE_RANK() OVER (PARTITION BY d.name ORDER BY e.salary DESC) AS salary_rank
+FROM employee e
+JOIN department d
+ON e.departmentId = d.id
+) b
+WHERE salary_rank <= 3
+ORDER BY department ASC
+
+-- 1667. Fix Names in The Table
+#Solution 1
+SELECT user_id, CONCAT(UPPER(LEFT(name,1)),LOWER(RIGHT(name, LENGTH(Name)-1))) as name
+FROM users
+ORDER BY user_id
+
+#Solution 2
+SELECT user_id, CONCAT(UPPER(SUBSTR(name,1,1)),LOWER(SUBSTR(name,2))) AS name
+FROM users
+ORDER BY user_id
+
+-- 1327. List the Products Ordered in a Period
+WITH a AS(
+    SELECT product_id, SUM(unit) as unit
+    FROM orders
+    WHERE LEFT(order_date,7) = '2020-02'
+    GROUP BY product_id
+)
+
+SELECT p.product_name, a.unit
+FROM products p
+LEFT JOIN a USING(product_id)
+WHERE a.unit >= 100
+
+-- 1527. Patients With a Condition
+SELECT *
+FROM Patients
+WHERE conditions LIKE 'DIAB1%' or conditions LIKE '% DIAB1%'
+
+-- 196. Delete Duplicate Emails
+DELETE p2
+FROM person p1 JOIN person p2
+ON p1.email = p2.email AND p1.id < p2.id
+
+-- 176. Second Highest Salary
+SELECT
+    (
+        SELECT DISTINCT salary as SecondHighestSalary
+        FROM(
+                SELECT
+                salary,
+                DENSE_RANK() OVER(ORDER BY salary DESC) AS r
+                FROM employee ) b
+        WHERE r = 2) SecondHighestSalary
+
+-- 1484. Group Sold Products By the Date
+SELECT 
+    sell_date, 
+    COUNT(DISTINCT product) AS num_sold,
+    GROUP_CONCAT(DISTINCT product ORDER BY product SEPARATOR ',') AS products
+FROM activities
+GROUP BY sell_date
+ORDER BY sell_date
+
+-- 1327. List the Product Ordered in a Period
+WITH a AS(
+    SELECT product_id, SUM(unit) as unit
+    FROM orders
+    WHERE LEFT(order_date,7) = '2020-02'
+    GROUP BY product_id
+)
+
+SELECT p.product_name, a.unit
+FROM products p
+LEFT JOIN a USING(product_id)
+WHERE a.unit >= 100
+
+-- 1517. Find Users With Valid Emails
+SELECT *
+FROM users
+WHERE REGEXP_LIKE(mail, '^[a-zA-Z][a-zA-Z0-9_.-]*@leetcode[.]com$','c')
+-- ^ : Start of the string
+-- * : 0 or more rept
+-- \\ or [] : make sure . is treated as literal text
+-- $ : ensure no str followed
