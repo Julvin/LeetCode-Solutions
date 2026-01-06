@@ -525,3 +525,30 @@ SUM(IF(month = 'Nov',revenue,NULL)) AS Nov_Revenue,
 SUM(IF(month = 'Dec',revenue,NULL)) AS Dec_Revenue
 FROM department
 GROUP BY id
+
+-- 601. Human Traffic of Stadium
+# Write your MySQL query statement below
+WITH full_results AS (
+    SELECT 
+        id,
+        visit_date,
+        people,
+        LEAD(people) OVER(ORDER BY id) AS next_day_people,
+        LEAD(people, 2) OVER(ORDER BY id) AS next_two_day_people,
+        LAG(people) OVER(ORDER BY id) AS prev_day_people,
+        LAG(people, 2) OVER(ORDER BY id) AS prev_two_day_people
+)
+
+, id_selection AS (
+    SELECT
+        id,
+        visit_date,
+        people
+    FROM full_results
+    WHERE (people > 99 AND next_day_people > 99 AND next_two_day_people > 99) OR 
+    (people > 99 AND prev_day_people > 99 AND prev_two_day_people > 99) OR
+    (people > 99 AND next_day_people > 99 AND prev_day_people > 99)
+)
+
+SELECT *
+FROM id_selection
