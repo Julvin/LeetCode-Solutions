@@ -3,4 +3,4 @@ Here is the collection of the LeetCode questions I have solved over time. I woul
 
 Python Solve: 72
 
-MySQL Solve: 53
+MySQL Solve: 54
