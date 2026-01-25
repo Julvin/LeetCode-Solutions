@@ -589,3 +589,12 @@ FROM library_books l
 JOIN a USING(book_id)
 WHERE a.borrowed = l.total_copies
 ORDER BY current_borrowers DESC, title ASC
+
+-- 3465. Find Product with Valid Serial Numbers
+SELECT *
+FROM products
+WHERE description REGEXP '(?-i)\\bSN[0-9]{4}\-[0-9]{4}\\b'
+ORDER BY product_id ASC
+
+##(?-i) ensure case sensitivity
+##\b set word boundaries
