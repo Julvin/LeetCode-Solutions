@@ -599,7 +599,7 @@ ORDER BY product_id ASC
 ##(?-i) ensure case sensitivity
 ##\b set word boundaries
 
-##3220. Odd and Even Transactions
+-- 3220. Odd and Even Transactions
 SELECT 
     transaction_date,
     SUM(CASE WHEN amount % 2 <> 0 THEN amount ELSE 0 END) as odd_sum,
@@ -607,3 +607,18 @@ SELECT
 FROM transactions
 GROUP BY transaction_date
 ORDER BY transaction_date ASC
+
+-- 3421. Find Students Who Improved
+WITH ranked AS (
+    SELECT
+        student_id,
+        subject,
+        FIRST_VALUE(score) OVER (PARTITION BY student_id, subject ORDER BY exam_date) as first_score,
+        FIRST_VALUE(score) OVER (PARTITION BY student_id, subject ORDER BY exam_date DESC) as latest_score
+    FROM scores
+)
+
+SELECT DISTINCT *
+FROM ranked
+WHERE first_score < latest_score
+ORDER BY student_id ASC, subject ASC
