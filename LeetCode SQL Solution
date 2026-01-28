@@ -644,3 +644,21 @@ FROM UserActivity
 GROUP BY user_id
 HAVING paid_avg_duration > 0
 ORDER BY user_id ASC
+
+-- 3521 - Find Product Recommendation Pairs
+SELECT 
+    p1.product_id as product1_id,
+    p2.product_id as product2_id,
+    pin.category as product1_category,
+    pin2.category as product2_category,
+    COUNT(user_id) as customer_count
+FROM ProductPurchases p1
+INNER JOIN ProductPurchases p2 USING(user_id)
+JOIN ProductInfo pin
+ON p1.product_id = pin.product_id
+JOIN ProductInfo pin2
+ON p2.product_id = pin2.product_id
+WHERE p1.product_id < p2.product_id
+GROUP BY p1.product_id, p2.product_id
+HAVING customer_count > 2
+ORDER BY customer_count DESC, product1_id ASC, product2_id ASC
