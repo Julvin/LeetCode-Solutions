@@ -703,3 +703,28 @@ JOIN patients p ON c1.patient_id = p.patient_id
 WHERE (c1.test_date < c2.test_date) AND (c1.result = 'Positive') AND (c2.result = 'Negative')
 GROUP BY patient_id 
 ORDER BY recovery_time ASC, p.patient_name ASC
+
+--3601. Find Drivers with Improved Fuel Efficiency
+WITH d AS
+(
+SELECT 
+    driver_id,
+    driver_name,
+    AVG(CASE WHEN period = 'first' THEN eff ELSE NULL END) AS first_half_avg,
+    AVG(CASE WHEN period = 'second' THEN eff ELSE NULL END) AS second_half_avg
+FROM
+(SELECT *, CASE WHEN MONTH(trip_date) < 7 THEN 'first' ELSE 'second' END AS period, distance_km/fuel_consumed AS eff 
+FROM trips
+JOIN drivers USING(driver_id)) as t
+GROUP BY driver_id
+)
+
+SELECT
+    driver_id,
+    driver_name,
+    ROUND(first_half_avg,2) AS first_half_avg,
+    ROUND(second_half_avg,2) AS second_half_avg,
+    ROUND(second_half_avg - first_half_avg,2) AS efficiency_improvement
+FROM d
+WHERE first_half_avg IS NOT NULL AND second_half_avg IS NOT NULL AND first_half_avg < second_half_avg
+ORDER BY efficiency_improvement DESC, driver_name ASC
