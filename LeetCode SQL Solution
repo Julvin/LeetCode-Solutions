@@ -690,3 +690,16 @@ FROM b
 LEFT JOIN employees USING(employee_id)
 WHERE b.r1 IS NOT NULL AND b.r2 IS NOT NULL AND b.r3 IS NOT NULL AND b.r1 > b.r2  AND b.r2 > b.r3 
 ORDER BY improvement_score DESC, name ASC
+
+-- 3586. Find Covid Recovery Patients
+SELECT 
+    c1.patient_id,
+    p.patient_name,
+    p.age, 
+    DATEDIFF(MIN(c2.test_date),MIN(c1.test_date)) as recovery_time
+FROM covid_tests c1
+JOIN covid_tests c2 USING(patient_id)
+JOIN patients p ON c1.patient_id = p.patient_id
+WHERE (c1.test_date < c2.test_date) AND (c1.result = 'Positive') AND (c2.result = 'Negative')
+GROUP BY patient_id 
+ORDER BY recovery_time ASC, p.patient_name ASC
