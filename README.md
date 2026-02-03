@@ -1,5 +1,5 @@
-Here is the collection of LeetCode questions I have solved. I will continuously update my solutions here, check it out!
+Here is the collection of the LeetCode questions I have solved over time. I would continuously update the file with new questions I solved with Python or SQL. Feel free to check it out
 
-Pandas: 86
+Python Solve: 87
 
-MySQL: 64
+MySQL Solve: 66
