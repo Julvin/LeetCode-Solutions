@@ -728,3 +728,22 @@ SELECT
 FROM d
 WHERE first_half_avg IS NOT NULL AND second_half_avg IS NOT NULL AND first_half_avg < second_half_avg
 ORDER BY efficiency_improvement DESC, driver_name ASC
+
+-- 3611. Find Overbooked Employees
+WITH a AS(
+    SELECT *, WEEK(meeting_date, 3) as week_num
+    FROM meetings
+),
+b AS (
+    SELECT employee_id, week_num, SUM(duration_hours) as hours
+    FROM a
+    GROUP BY employee_id, week_num
+    HAVING hours > 20
+)
+
+SELECT b.employee_id, e.employee_name, e.department, COUNT(*) as meeting_heavy_weeks
+FROM b
+JOIN employees e USING(employee_id)
+GROUP BY b.employee_id
+HAVING meeting_heavy_weeks > 1
+ORDER BY meeting_heavy_weeks DESC, employee_name ASC
