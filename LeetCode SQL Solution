@@ -747,3 +747,36 @@ JOIN employees e USING(employee_id)
 GROUP BY b.employee_id
 HAVING meeting_heavy_weeks > 1
 ORDER BY meeting_heavy_weeks DESC, employee_name ASC
+
+-- 3626. Find Stores with Inventory Imbalance
+WITH value AS (
+    SELECT store_id, MAX(price) as max_price, MIN(price) as min_price
+    FROM inventory
+    GROUP BY store_id
+    HAVING COUNT(store_id)>2
+),
+value2 AS(
+    SELECT 
+        v.store_id,
+        MAX(CASE WHEN i.price = v.max_price THEN i.product_name END) AS most_exp_product,
+        MAX(CASE WHEN i.price = v.min_price THEN i.product_name END) AS cheapest_product,
+        MAX(CASE WHEN i.price = v.max_price THEN i.quantity END) AS most_exp_quantity,
+        MAX(CASE WHEN i.price = v.min_price THEN i.quantity END) AS cheapest_quantity
+    FROM value v
+    JOIN inventory i USING(store_id)
+    GROUP BY v.store_id
+    HAVING most_exp_quantity < cheapest_quantity
+)
+
+#FROM inventory i JOIN value v ON i.store_id = v.store_id AND (i.price = v.max_price OR i.price = v.min_price)
+
+SELECT 
+    store_id,
+    s.store_name,
+    s.location,
+    v2.most_exp_product,
+    v2.cheapest_product,
+    ROUND(v2.cheapest_quantity/v2.most_exp_quantity,2) AS imbalance_ratio
+FROM value2 v2
+JOIN stores s USING(store_id)
+ORDER BY imbalance_ratio DESC, store_name ASC
