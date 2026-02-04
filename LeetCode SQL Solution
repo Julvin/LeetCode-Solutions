@@ -780,3 +780,23 @@ SELECT
 FROM value2 v2
 JOIN stores s USING(store_id)
 ORDER BY imbalance_ratio DESC, store_name ASC
+
+-- 3642. Find Books with Polarized Opinions
+WITH CTE AS(
+SELECT 
+    book_id, 
+    MAX(session_rating) AS maxv, 
+    MIN(session_rating) AS minv, 
+    COUNT('session_id') AS sessions,
+    SUM(CASE WHEN session_rating <> 3 THEN 1 ELSE 0 END) AS countx
+FROM reading_sessions
+GROUP BY book_id
+HAVING sessions >= 5 AND maxv >=4 AND minv <=2
+)
+
+SELECT c.book_id, b.title, b.author, b.genre, b.pages, (c.maxv - minv) AS rating_spread, ROUND(c.countx/c.sessions,2) AS polarization_score 
+FROM CTE c
+JOIN books b USING(book_id)
+GROUP BY c.book_id
+HAVING polarization_score >= 0.6
+ORDER BY polarization_score DESC, title DESC
