@@ -800,3 +800,13 @@ JOIN books b USING(book_id)
 GROUP BY c.book_id
 HAVING polarization_score >= 0.6
 ORDER BY polarization_score DESC, title DESC
+
+-- 3657. Find Loyal Customers
+SELECT customer_id
+FROM customer_transactions
+GROUP BY customer_id
+HAVING
+    COUNT(customer_id) > 2 AND
+    DATEDIFF(MAX(transaction_date),MIN(transaction_date)) >= 30 AND
+    (SUM(CASE WHEN transaction_type = "refund" THEN 1 ELSE 0 END)/COUNT(customer_id)) < 0.2
+ORDER BY customer_id ASC
