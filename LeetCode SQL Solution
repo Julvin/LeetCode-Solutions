@@ -851,3 +851,21 @@ WHERE
     current_monthly_amount/max_historical_amount < 0.5 AND
     days_as_subscriber >= 60
 ORDER BY days_as_subscriber DESC, user_id ASC
+
+-- 3808. Find Emotionally Consistent Users
+WITH r AS
+(
+    SELECT user_id, reaction, COUNT(reaction) AS count_r
+    FROM reactions
+    GROUP BY user_id, reaction
+    ORDER BY user_id ASC, count_r DESC
+)
+
+SELECT 
+    user_id, 
+    reaction AS dominant_reaction, 
+    ROUND(count_r/SUM(count_r),2) AS reaction_ratio
+FROM r
+GROUP BY user_id
+HAVING reaction_ratio >= 0.6 AND SUM(count_r) >= 5
+ORDER BY reaction_ratio DESC, user_id ASC
