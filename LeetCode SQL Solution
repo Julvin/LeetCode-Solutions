@@ -825,3 +825,29 @@ HAVING
     ROUND(AVG(order_rating),2) >= 4 AND
     SUM(CASE WHEN order_rating IS NOT NULL THEN 1 ELSE 0 END) / COUNT('customer_id') >= 0.5
 ORDER BY average_rating DESC, customer_id DESC
+
+-- 3716. Find Churn Risk Customers
+WITH plan AS (
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY event_date DESC) AS event 
+    FROM subscription_events
+),
+plan2 AS(
+    SELECT 
+        user_id,
+        MAX(CASE WHEN event = 1 THEN plan_name END) AS current_plan,
+        MAX(CASE WHEN event = 1 THEN monthly_amount END) AS current_monthly_amount,
+        MAX(monthly_amount) AS max_historical_amount,
+        DATEDIFF(MAX(event_date), MIN(event_date)) AS days_as_subscriber
+    FROM plan
+    GROUP BY user_id
+)
+
+SELECT *
+FROM plan2
+WHERE 
+    current_plan IS NOT NULL AND
+    current_monthly_amount/max_historical_amount < 0.5 AND
+    days_as_subscriber >= 60
+ORDER BY days_as_subscriber DESC, user_id ASC
