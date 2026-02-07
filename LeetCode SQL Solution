@@ -869,3 +869,16 @@ FROM r
 GROUP BY user_id
 HAVING reaction_ratio >= 0.6 AND SUM(count_r) >= 5
 ORDER BY reaction_ratio DESC, user_id ASC
+
+-- 262. Trips and Users
+SELECT
+    t.request_at AS 'Day',
+    ROUND(AVG(CASE WHEN t.status LIKE 'ca%' THEN 1 ELSE 0 END),2) AS 'Cancellation Rate'
+FROM trips t
+JOIN users u1 ON t.client_id  = u1.users_id
+JOIN users u2 ON t.driver_id = u2.users_id
+WHERE
+    u1.banned = 'No' AND
+    u2.banned = 'No' AND
+    t.request_at BETWEEN '2013-10-01' AND '2013-10-03'
+GROUP BY request_at
