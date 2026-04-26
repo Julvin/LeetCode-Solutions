@@ -2,4 +2,4 @@ Here is the collection of the LeetCode questions I have solved over time. I woul
 
 Python Solve: 93
 
-MySQL Solve: 74
+MySQL Solve: 75
